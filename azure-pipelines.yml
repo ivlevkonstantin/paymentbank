@@ -31,11 +31,19 @@ stages:
 
         - task: VSBuild@1
           inputs:
-            solution: '$(solution)'
-            msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
+            solution: '**/PaymentBank.AccountService.csproj'
+            msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\AccountService.zip" /p:DeployIisAppPath="Default Web Site"'
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
-          displayName: build
+          displayName: build AccountService
+
+        - task: VSBuild@1
+          inputs:
+            solution: '**/PaymentBank.AccountService.csproj'
+            msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\TransactionService.zip" /p:DeployIisAppPath="Default Web Site"'
+            platform: '$(buildPlatform)'
+            configuration: '$(buildConfiguration)'
+          displayName: build TransactionService
 
         - task: VSTest@2
           inputs:
@@ -62,7 +70,7 @@ stages:
             azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
             appType: 'webApp'
             WebAppName: 'PaymentBank-AccountService'
-            packageForLinux: '$(build.artifactStagingDirectory)\WebApp.zip'
+            packageForLinux: '$(build.artifactStagingDirectory)\AccountService.zip'
 
         # - task: AzureRmWebAppDeployment@4
         #   inputs:
