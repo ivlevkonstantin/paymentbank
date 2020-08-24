@@ -1,0 +1,95 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+
+stages:
+  - stage: Build
+    jobs:
+      - job: Build
+        steps:
+
+        - task: NuGetToolInstaller@1
+          displayName: Install nuget tool
+
+        - task: NuGetCommand@2
+          inputs:
+            restoreSolution: '$(solution)'
+          displayName: nuget restore
+
+        - task: VSBuild@1
+          inputs:
+            solution: '**/PaymentBank.AccountService.csproj'
+            msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\AccountService.zip" /p:DeployIisAppPath="Default Web Site"'
+            platform: '$(buildPlatform)'
+            configuration: '$(buildConfiguration)'
+          displayName: build AccountService
+
+        - task: VSBuild@1
+          inputs:
+            solution: '**/PaymentBank.TransactionService.csproj'
+            msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\TransactionService.zip" /p:DeployIisAppPath="Default Web Site"'
+            platform: '$(buildPlatform)'
+            configuration: '$(buildConfiguration)'
+          displayName: build TransactionService
+
+        - task: VSTest@2
+          inputs:
+            platform: '$(buildPlatform)'
+            configuration: '$(buildConfiguration)'
+            
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'drop'
+            publishLocation: 'Container'
+
+        # - task: AzureWebApp@1
+        #   inputs:
+        #     azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
+        #     appType: 'webApp'
+        #     appName: 'PaymentBank-AccountService'
+        #     package: '$(build.artifactStagingDirectory)\WebApp.zip'
+        #     deploymentMethod: 'auto'
+
+        - task: AzureRmWebAppDeployment@4
+          inputs:
+            ConnectionType: 'AzureRM'
+            azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
+            appType: 'webApp'
+            WebAppName: 'PaymentBank-AccountService'
+            packageForLinux: '$(build.artifactStagingDirectory)\AccountService.zip'
+        
+        - task: AzureRmWebAppDeployment@4
+          inputs:
+            ConnectionType: 'AzureRM'
+            azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
+            appType: 'webApp'
+            WebAppName: 'PaymentBank-TransactionService'
+            packageForLinux: '$(build.artifactStagingDirectory)\TransactionService.zip'
+
+        # - task: AzureRmWebAppDeployment@4
+        #   inputs:
+        #       ConnectionType: 'AzureRM'
+        #       azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
+        #       appType: 'webApp'
+        #       WebAppName: 'PaymentBank-AccountService'
+        #       packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+  # - stage: Deploy
+  #  # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  #   jobs:
+  #     - job: Deploy
+  #       steps:
+         
