@@ -71,6 +71,14 @@ stages:
             appType: 'webApp'
             WebAppName: 'PaymentBank-AccountService'
             packageForLinux: '$(build.artifactStagingDirectory)\AccountService.zip'
+        
+        - task: AzureRmWebAppDeployment@4
+          inputs:
+            ConnectionType: 'AzureRM'
+            azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
+            appType: 'webApp'
+            WebAppName: 'PaymentBank-TransactionService'
+            packageForLinux: '$(build.artifactStagingDirectory)\TransactionService.zip'
 
         # - task: AzureRmWebAppDeployment@4
         #   inputs:
