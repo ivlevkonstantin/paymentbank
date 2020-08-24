@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PaymentBank.Model", "src\Pa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PaymentBank.TransactionService", "src\PaymentBank.TransactionService\PaymentBank.TransactionService.csproj", "{B83AFB6A-B418-4B80-9B31-1AB06DF36D13}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaymentBank.Tests", "tst\PaymentBank.Tests\PaymentBank.Tests.csproj", "{1F90389E-3227-49A6-9FA5-1C6EF816B397}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B83AFB6A-B418-4B80-9B31-1AB06DF36D13}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B83AFB6A-B418-4B80-9B31-1AB06DF36D13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B83AFB6A-B418-4B80-9B31-1AB06DF36D13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F90389E-3227-49A6-9FA5-1C6EF816B397}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F90389E-3227-49A6-9FA5-1C6EF816B397}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F90389E-3227-49A6-9FA5-1C6EF816B397}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F90389E-3227-49A6-9FA5-1C6EF816B397}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
