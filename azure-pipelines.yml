@@ -39,7 +39,7 @@ stages:
 
         - task: VSBuild@1
           inputs:
-            solution: '**/PaymentBank.AccountService.csproj'
+            solution: '**/PaymentBank.TransactionService.csproj'
             msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\TransactionService.zip" /p:DeployIisAppPath="Default Web Site"'
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
