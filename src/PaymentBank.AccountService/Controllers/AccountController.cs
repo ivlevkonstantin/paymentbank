@@ -43,28 +43,36 @@ namespace PaymentBank.AccountService.Controllers
         {
             _logger.LogInformation($"Get accounts for a {customerId}");
 
-            if (customerId <= 0)
+            try
             {
-                _logger.LogWarning($"Invalid customer id: {customerId}");
-                return BadRequest();
+                if (customerId <= 0)
+                {
+                    _logger.LogWarning($"Invalid customer id: {customerId}");
+                    return BadRequest();
+                }
+
+                List<CustomerAccount> customerAccounts = _mapper.Map<List<CustomerAccount>>(_customerAccountRepository.GetCustomerAccountsByCustomerId(customerId));
+
+                if (customerAccounts == null)
+                {
+                    _logger.LogWarning($"No accounts found for customer {customerId}");
+                    return NotFound();
+                }
+
+                _logger.LogInformation($"{customerAccounts.Count} accounts found for customer {customerId}");
+
+                foreach (var customerAccount in customerAccounts)
+                {
+                    customerAccount.Transactions = await _transactionProxyService.GetTransactions(customerAccount.CustomerAccountId);
+                }
+
+                return Ok(customerAccounts);
             }
-
-            List<CustomerAccount> result = _mapper.Map<List<CustomerAccount>>(_customerAccountRepository.GetCustomerAccountsByCustomerId(customerId));
-
-            if (result == null)
+            catch (Exception ex)
             {
-                _logger.LogWarning($"No accounts found for customer {customerId}");
-                return NotFound();
+                _logger.LogError($"Error in {nameof(GetByCustomerId)} with customerId {customerId}. Details: {ex}");
+                return StatusCode(500);
             }
-
-            _logger.LogInformation($"{result.Count} accounts found for customer {customerId}");
-
-            foreach (var customerAccount in result)
-            {
-                customerAccount.Transactions = await _transactionProxyService.GetTransactions(customerAccount.CustomerAccountId);
-            }
-
-            return Ok(result);
         }
 
         [HttpGet("customer/{customerId}")]
