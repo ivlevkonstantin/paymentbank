@@ -40,3 +40,22 @@ stages:
           inputs:
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
+            
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'drop'
+            publishLocation: 'Container'
+        - task: AzureRmWebAppDeployment@4
+          inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
+              appType: 'webApp'
+              WebAppName: 'PaymentBank-AccountService'
+              packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+  # - stage: Deploy
+  #  # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  #   jobs:
+  #     - job: Deploy
+  #       steps:
+         
