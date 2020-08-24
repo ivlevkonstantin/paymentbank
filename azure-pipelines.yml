@@ -47,22 +47,20 @@ stages:
 
         - task: VSTest@2
           inputs:
+            testSelector: 'testAssemblies'
+            testAssemblyVer2: '**\PaymentBank.Tests.dll'
+            searchFolder: '$(System.DefaultWorkingDirectory)'
+            codeCoverageEnabled: true
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
-            
+            rerunFailedTests: false
+          displayName: Test
+
         - task: PublishBuildArtifacts@1
           inputs:
             PathtoPublish: '$(Build.ArtifactStagingDirectory)'
             ArtifactName: 'drop'
             publishLocation: 'Container'
-
-        # - task: AzureWebApp@1
-        #   inputs:
-        #     azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
-        #     appType: 'webApp'
-        #     appName: 'PaymentBank-AccountService'
-        #     package: '$(build.artifactStagingDirectory)\WebApp.zip'
-        #     deploymentMethod: 'auto'
 
         - task: AzureRmWebAppDeployment@4
           inputs:
@@ -71,25 +69,12 @@ stages:
             appType: 'webApp'
             WebAppName: 'PaymentBank-AccountService'
             packageForLinux: '$(build.artifactStagingDirectory)\AccountService.zip'
-        
+
         - task: AzureRmWebAppDeployment@4
+          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
           inputs:
             ConnectionType: 'AzureRM'
             azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
             appType: 'webApp'
             WebAppName: 'PaymentBank-TransactionService'
             packageForLinux: '$(build.artifactStagingDirectory)\TransactionService.zip'
-
-        # - task: AzureRmWebAppDeployment@4
-        #   inputs:
-        #       ConnectionType: 'AzureRM'
-        #       azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
-        #       appType: 'webApp'
-        #       WebAppName: 'PaymentBank-AccountService'
-        #       packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
-  # - stage: Deploy
-  #  # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-  #   jobs:
-  #     - job: Deploy
-  #       steps:
-         
