@@ -48,13 +48,21 @@ stages:
             ArtifactName: 'drop'
             publishLocation: 'Container'
 
-        - task: AzureWebApp@1
+        # - task: AzureWebApp@1
+        #   inputs:
+        #     azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
+        #     appType: 'webApp'
+        #     appName: 'PaymentBank-AccountService'
+        #     package: '$(build.artifactStagingDirectory)\WebApp.zip'
+        #     deploymentMethod: 'auto'
+
+        - task: AzureRmWebAppDeployment@4
           inputs:
+            ConnectionType: 'AzureRM'
             azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
             appType: 'webApp'
-            appName: 'PaymentBank-AccountService'
-            package: '$(build.artifactStagingDirectory)\WebApp.zip'
-            deploymentMethod: 'auto'
+            WebAppName: 'PaymentBank-AccountService'
+            packageForLinux: '$(build.artifactStagingDirectory)\WebApp.zip'
 
         # - task: AzureRmWebAppDeployment@4
         #   inputs:
