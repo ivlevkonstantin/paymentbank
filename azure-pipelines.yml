@@ -53,7 +53,7 @@ stages:
         - task: VSTest@2
           inputs:
             testSelector: 'testAssemblies'
-            testAssemblyVer2: '**\PaymentBank.Tests.dll'
+            testAssemblyVer2: '**/bin/**/PaymentBank.Tests.dll'
             searchFolder: '$(System.DefaultWorkingDirectory)'
             codeCoverageEnabled: true
             platform: '$(buildPlatform)'
