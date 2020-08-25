@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using PaymentBank.AccountService.Services;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace PaymentBank.AccountService.Controllers
 {
@@ -30,16 +30,43 @@ namespace PaymentBank.AccountService.Controllers
             _logger = logger;
         }
 
+        [Produces("application/json")]
+        [SwaggerResponse(200, "A list of all customer accounts successfully retrived")]
+        [SwaggerOperation(
+            Summary = "Returns a list of all customer accounts",
+            Description = "Returns a list of all customer accounts without transactions.",
+            OperationId = "GetCustomerAccounts"
+        )]
+        [SwaggerResponse(500, "Internal server error. Please, try again later.")]
         [HttpGet("account")]
         public ActionResult<IEnumerable<CustomerAccount>> Get()
         {
             _logger.LogInformation("Get all customer accounts");
-            var customerAccounts = _customerAccountRepository.GetCustomerAccounts();
-            return Ok(customerAccounts);
+            try
+            {
+                var customerAccounts = _customerAccountRepository.GetCustomerAccounts();
+                return Ok(customerAccounts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in {nameof(Get)}. Details: {ex}");
+                return StatusCode(500);
+            }
         }
 
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Returns a list of customer accounts for a particular customer",
+            Description = "Returns a list of customer accounts for a particular customer",
+            OperationId = "GetCustomerAccountsByCustomerId"
+        )]
+        [SwaggerResponse(500, "Internal server error. Please, try again later.")]
+        [SwaggerResponse(404, "Customer does not exist")]
+        [SwaggerResponse(400, "Invalid customer id")]
+        [SwaggerResponse(200, "A list of customer accounts successfully retrieved")]
         [HttpGet("account/{customerId}")]
-        public async Task<ActionResult<IEnumerable<CustomerAccount>>> GetByCustomerId(int customerId)
+        public async Task<ActionResult<IEnumerable<CustomerAccount>>> GetByCustomerId(
+            [SwaggerParameter("Customer identifier", Required = true)] int customerId)
         {
             _logger.LogInformation($"Get accounts for a {customerId}");
 
@@ -75,79 +102,123 @@ namespace PaymentBank.AccountService.Controllers
             }
         }
 
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Returns an extended customer information",
+            Description = "Returns an extended customer information",
+            OperationId = "GetCustomerInfoByCustomerId"
+        )]
+        [SwaggerResponse(500, "Internal server error. Please, try again later.")]
+        [SwaggerResponse(404, "Customer does not exist")]
+        [SwaggerResponse(400, "Invalid customer id")]
+        [SwaggerResponse(200, "Customer info")]
         [HttpGet("customer/{customerId}")]
-        public async Task<ActionResult<DbCustomer>> GetCustomerInfoByCustomerId(int customerId)
+        public async Task<ActionResult<Customer>> GetCustomerInfoByCustomerId(
+            [SwaggerParameter("Customer identifier", Required = true)] int customerId)
         {
             _logger.LogInformation($"Get customer info for a {customerId}");
 
-            if (customerId <= 0)
+            try
             {
-                _logger.LogWarning($"Invalid customer id: {customerId}");
-                return BadRequest();
-            }
+                if (customerId <= 0)
+                {
+                    _logger.LogWarning($"Invalid customer id: {customerId}");
+                    return BadRequest();
+                }
 
-            Customer customer = _mapper.Map<Customer>(_customerAccountRepository.GetCustomer(customerId));
+                Customer customer = _mapper.Map<Customer>(_customerAccountRepository.GetCustomer(customerId));
 
-            if (customer == null)
-            {
-                _logger.LogWarning($"No customer info found for customer {customerId}");
-                return NotFound();
-            }
+                if (customer == null)
+                {
+                    _logger.LogWarning($"No customer info found for customer {customerId}");
+                    return NotFound();
+                }
 
-            List<CustomerAccount> customerAccounts = _mapper.Map<List<CustomerAccount>>(_customerAccountRepository.GetCustomerAccountsByCustomerId(customerId));
+                List<CustomerAccount> customerAccounts = _mapper.Map<List<CustomerAccount>>(_customerAccountRepository.GetCustomerAccountsByCustomerId(customerId));
 
-            if (customerAccounts == null)
-            {
+                if (customerAccounts == null)
+                {
+                    return Ok(customer);
+                }
+
+                customer.Balance = customerAccounts.Sum(c => c.Balance);
+
+                foreach (var customerAccount in customerAccounts)
+                {
+                    customerAccount.Transactions = await _transactionProxyService.GetTransactions(customerAccount.CustomerAccountId);
+                }
+
+                customer.customerAccounts = customerAccounts;
+
                 return Ok(customer);
             }
-
-            customer.Balance = customerAccounts.Sum(c => c.Balance);
-
-            foreach (var customerAccount in customerAccounts)
+            catch (Exception ex)
             {
-                customerAccount.Transactions = await _transactionProxyService.GetTransactions(customerAccount.CustomerAccountId);
+                _logger.LogError($"Error in {nameof(GetCustomerInfoByCustomerId)} with customerId {customerId}. Details: {ex}");
+                return StatusCode(500);
             }
-
-            customer.customerAccounts = customerAccounts;
-
-            return Ok(customer);
         }
 
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Creates a new account for a customer",
+            Description = @"Creates a new account for a selected customer.
+                            Creates a new transaction for the account in case of positive initial credit",
+            OperationId = "GetCustomerInfoByCustomerId"
+        )]
+        [SwaggerResponse(500, "Internal server error. Please, try again later.")]
+        [SwaggerResponse(400, "Invalid customer Id / Initial credit could not be negative / A customer does not exist")]
+        [SwaggerResponse(200, "Brand new customer account without transactions")]
         [HttpPost("accountcreaterequest")]
-        public async Task<ActionResult<CustomerAccount>> OpenAccount(CustomerAccountCreateRequest customerAccountCreateRequest)
+        public async Task<ActionResult<CustomerAccount>> OpenAccount(
+            [SwaggerParameter("New account request parameters", Required = true)] CustomerAccountCreateRequest customerAccountCreateRequest)
         {
             if (customerAccountCreateRequest.CustomerId <= 0)
             {
-                return BadRequest("Invalid customer Id");
+                return BadRequest(new ProblemDetails
+                {
+                    Detail = "Invalid customer Id"
+                });
             }
 
             if (customerAccountCreateRequest.InitialCredit < 0)
             {
-                return BadRequest("Initial credit could not be negative");
-            }
-
-            var customer = _customerAccountRepository.GetCustomer(customerAccountCreateRequest.CustomerId);
-            if (customer == null)
-            {
-                return BadRequest($"Customer with id {customerAccountCreateRequest.CustomerId} does not exist");
-            }
-
-            var newAccount = _customerAccountRepository.CreateCustomerAccount(customerAccountCreateRequest.CustomerId, customerAccountCreateRequest.InitialCredit);
-
-            if (customerAccountCreateRequest.InitialCredit != 0)
-            {
-                var newTransaction = new CustomerTransaction
+                return BadRequest(new ProblemDetails
                 {
-                    AccountId = newAccount.CustomerAccountId,
-                    Amount = customerAccountCreateRequest.InitialCredit,
-                    CreateDate = DateTime.UtcNow,
-                    CustomerId = customerAccountCreateRequest.CustomerId
-                };
-
-                await _transactionProxyService.CreateTransaction(newTransaction);
+                    Detail = "Initial credit could not be negative"
+                });
             }
 
-            return Ok(_mapper.Map<CustomerAccount>(newAccount));
+            try
+            {
+                var customer = _customerAccountRepository.GetCustomer(customerAccountCreateRequest.CustomerId);
+                if (customer == null)
+                {
+                    return BadRequest($"Customer with id {customerAccountCreateRequest.CustomerId} does not exist");
+                }
+
+                var newAccount = _customerAccountRepository.CreateCustomerAccount(customerAccountCreateRequest.CustomerId, customerAccountCreateRequest.InitialCredit);
+
+                if (customerAccountCreateRequest.InitialCredit != 0)
+                {
+                    var newTransaction = new AccountTransaction
+                    {
+                        AccountId = newAccount.CustomerAccountId,
+                        Amount = customerAccountCreateRequest.InitialCredit,
+                        CreateDate = DateTime.UtcNow,
+                        CustomerId = customerAccountCreateRequest.CustomerId
+                    };
+
+                    await _transactionProxyService.CreateTransaction(newTransaction);
+                }
+
+                return Ok(_mapper.Map<CustomerAccount>(newAccount));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in {nameof(OpenAccount)} with customerId {customerAccountCreateRequest?.CustomerId}. Details: {ex}");
+                return StatusCode(500);
+            }
         }
     }
 }

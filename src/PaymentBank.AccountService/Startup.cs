@@ -23,7 +23,10 @@ namespace PaymentBank.AccountService
                 .Bind(Configuration.GetSection(AccountOptions.AccountConfig));
 
             services.AddControllers();
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(c =>
+            {
+                c.EnableAnnotations();
+            });
             services.AddSingleton<ICustomerAccountRepository, CustomerAccountInMemoryRepository>();
             services.AddTransient<ITransactionProxyService, TransactionProxyService>();
             services.AddAutoMapper(cfg =>
