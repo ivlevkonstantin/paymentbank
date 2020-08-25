@@ -63,7 +63,7 @@ stages:
 
         - task: reportgenerator@4
           inputs:
-            reports: 'coverage.xml'
+            reports: '$(System.DefaultWorkingDirectory)/**/*.coverage'
             targetdir: 'coveragereport'
 
         - task: PublishBuildArtifacts@1
