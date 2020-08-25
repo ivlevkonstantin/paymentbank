@@ -59,6 +59,7 @@ stages:
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
             rerunFailedTests: false
+            resultsFolder: $(build.ArtifactStagingDirectory)\Test\Results
           displayName: Test
 
         - task: reportgenerator@4
