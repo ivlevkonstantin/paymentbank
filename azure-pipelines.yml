@@ -45,6 +45,11 @@ stages:
             configuration: '$(buildConfiguration)'
           displayName: build TransactionService
 
+        - task: VSBuild@1
+          inputs:
+            solution: '**\PaymentBank.Tests.csproj'
+          displayName: Build test project
+
         - task: VSTest@2
           inputs:
             testSelector: 'testAssemblies'
