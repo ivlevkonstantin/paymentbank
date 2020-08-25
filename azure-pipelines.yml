@@ -50,27 +50,45 @@ stages:
             solution: '**\PaymentBank.Tests.csproj'
           displayName: Build test project
 
-        - task: VSTest@2
+        - task: DotNetCoreCLI@2
           inputs:
-            testSelector: 'testAssemblies'
-            testAssemblyVer2: '**/bin/**/PaymentBank.Tests.dll'
-            searchFolder: '$(System.DefaultWorkingDirectory)'
-            codeCoverageEnabled: true
-            platform: '$(buildPlatform)'
-            configuration: '$(buildConfiguration)'
-            rerunFailedTests: false
-            resultsFolder: $(build.ArtifactStagingDirectory)\Test\Results
-          displayName: Test
+            command: 'custom'
+            projects: '**\PaymentBank.Tests.csproj'
+            custom: 'test'
+            arguments: '--logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
 
-        - task: reportgenerator@4
+        - task: PublishTestResults@2
           inputs:
-            reports: '$(Build.ArtifactStagingDirectory)\**\*.coverage'
-            targetdir: '$(Build.ArtifactStagingDirectory)\Test\Results\Coveragereport'
-
+            testResultsFormat: 'VSTest'
+            testResultsFiles: '$(System.DefaultWorkingDirectory)/**/.trx'
+            mergeTestResults: true
+            failTaskOnFailedTests: true
+      
         - task: PublishCodeCoverageResults@1
           inputs:
             codeCoverageTool: 'Cobertura'
-            summaryFileLocation: '$(Build.ArtifactStagingDirectory)\Test\Results\Coveragereport\Cobertura.xml'
+            summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*.cobertura.xml'
+        # - task: VSTest@2
+        #   inputs:
+        #     testSelector: 'testAssemblies'
+        #     testAssemblyVer2: '**/bin/**/PaymentBank.Tests.dll'
+        #     searchFolder: '$(System.DefaultWorkingDirectory)'
+        #     codeCoverageEnabled: true
+        #     platform: '$(buildPlatform)'
+        #     configuration: '$(buildConfiguration)'
+        #     rerunFailedTests: false
+        #     resultsFolder: $(build.ArtifactStagingDirectory)\Test\Results
+        #   displayName: Test
+
+        # - task: reportgenerator@4
+        #   inputs:
+        #     reports: '$(Build.ArtifactStagingDirectory)\**\*.coverage'
+        #     targetdir: '$(Build.ArtifactStagingDirectory)\Test\Results\Coveragereport'
+
+        # - task: PublishCodeCoverageResults@1
+        #   inputs:
+        #     codeCoverageTool: 'Cobertura'
+        #     summaryFileLocation: '$(Build.ArtifactStagingDirectory)\Test\Results\Coveragereport\Cobertura.xml'
 
         - task: PublishBuildArtifacts@1
           inputs:
