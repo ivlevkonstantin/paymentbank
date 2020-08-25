@@ -68,6 +68,7 @@ stages:
             publishLocation: 'Container'
 
         - task: AzureRmWebAppDeployment@4
+          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
           inputs:
             ConnectionType: 'AzureRM'
             azureSubscription: 'Pay-As-You-Go(635b6f31-6bab-4592-a015-9cc9e1521208)'
