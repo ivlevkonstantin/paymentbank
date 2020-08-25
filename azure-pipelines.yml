@@ -61,6 +61,11 @@ stages:
             rerunFailedTests: false
           displayName: Test
 
+        - task: reportgenerator@4
+          inputs:
+            reports: 'coverage.xml'
+            targetdir: 'coveragereport'
+
         - task: PublishBuildArtifacts@1
           inputs:
             PathtoPublish: '$(Build.ArtifactStagingDirectory)'
