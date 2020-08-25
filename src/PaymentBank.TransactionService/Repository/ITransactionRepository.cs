@@ -4,8 +4,8 @@ namespace PaymentBank.TransactionService.Repository
 {
     public interface ITransactionRepository
     {
-        List<CustomerTransaction> GetTransactions();
-        List<CustomerTransaction> GetTransactionsByAccountId(int accountId);
-        CustomerTransaction CreateTransaction(CustomerTransaction transaction);
+        List<AccountTransaction> GetTransactions();
+        List<AccountTransaction> GetTransactionsByAccountId(int accountId);
+        AccountTransaction CreateTransaction(AccountTransaction transaction);
     }
 }

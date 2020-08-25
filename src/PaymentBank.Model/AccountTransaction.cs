@@ -3,7 +3,7 @@
 namespace PaymentBank
 {
 
-    public class CustomerTransaction
+    public class AccountTransaction
     {
         public int Id { get; set; }
 

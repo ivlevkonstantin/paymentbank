@@ -19,7 +19,7 @@ namespace PaymentBank.TransactionService.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<CustomerTransaction>> Get()
+        public ActionResult<IEnumerable<AccountTransaction>> Get()
         {
             _logger.LogInformation("Get all customer transactions");
             return Ok(_transactionRepository.GetTransactions());
@@ -27,7 +27,7 @@ namespace PaymentBank.TransactionService.Controllers
 
         [HttpGet]
         [Route("{accountId}")]
-        public ActionResult<List<CustomerTransaction>> GetByAccountId(int accountId)
+        public ActionResult<List<AccountTransaction>> GetByAccountId(int accountId)
         {
             _logger.LogInformation($"Get transactions for a {accountId}");
 
@@ -36,7 +36,7 @@ namespace PaymentBank.TransactionService.Controllers
                 return BadRequest();
             }
 
-            List<CustomerTransaction> result = _transactionRepository.GetTransactionsByAccountId(accountId);
+            List<AccountTransaction> result = _transactionRepository.GetTransactionsByAccountId(accountId);
 
             if (result == null)
             {
@@ -49,7 +49,7 @@ namespace PaymentBank.TransactionService.Controllers
         }
 
         [HttpPost]
-        public ActionResult<CustomerTransaction> CreateTransactionForAccount(CustomerTransaction customerTransaction)
+        public ActionResult<AccountTransaction> CreateTransactionForAccount(AccountTransaction customerTransaction)
         {
             if (customerTransaction == null)
             {

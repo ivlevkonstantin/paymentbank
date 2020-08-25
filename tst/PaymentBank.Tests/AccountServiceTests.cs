@@ -137,8 +137,8 @@ namespace PaymentBank.Tests
 
             _transactionProxyServiceMock
                 .SetupSequence(c => c.GetTransactions(It.IsAny<int>()))
-                .Returns(Task.FromResult(new List<CustomerTransaction> { new CustomerTransaction() }))
-                .Returns(Task.FromResult(new List<CustomerTransaction> { new CustomerTransaction() }));
+                .Returns(Task.FromResult(new List<AccountTransaction> { new AccountTransaction() }))
+                .Returns(Task.FromResult(new List<AccountTransaction> { new AccountTransaction() }));
 
             //Act
             var result = await target.GetByCustomerId(customerId);
@@ -151,6 +151,105 @@ namespace PaymentBank.Tests
                 _customerAccountRepositoryMock.VerifyAll();
                 _transactionProxyServiceMock.VerifyAll();
                 _mapperMock.VerifyAll();
+            });
+        }
+
+        [Test]
+        public async Task OpenAccount_InvalidCustomerId_BadRequest()
+        {
+            //Arrange
+            var target = CreateTarget();
+
+            //Act
+            var result = await target.OpenAccount(new CustomerAccountCreateRequest
+            {
+                CustomerId = -1
+            });
+
+            //Assert
+            Assert.IsInstanceOf<BadRequestObjectResult>(result.Result);
+        }
+
+        [Test]
+        public async Task OpenAccount_InvalidInitialCredit_BadRequest()
+        {
+            //Arrange
+            var target = CreateTarget();
+            //Act
+            var result = await target.OpenAccount(new CustomerAccountCreateRequest
+            {
+                InitialCredit = -1
+            });
+
+            //Assert
+            Assert.IsInstanceOf<BadRequestObjectResult>(result.Result);
+        }
+
+        [Test]
+        public async Task OpenAccount_CustomerDoesNotExist_BadRequest()
+        {
+            //Arrange
+            var target = CreateTarget();
+            _customerAccountRepositoryMock
+                .Setup(c => c.GetCustomer(It.IsAny<int>()))
+                .Returns((DbCustomer) null);
+
+            //Act
+            var result = await target.OpenAccount(new CustomerAccountCreateRequest
+            {
+                InitialCredit = 0,
+                CustomerId = 1
+            });
+
+            //Assert
+            Assert.Multiple(() =>
+            {
+                Assert.IsInstanceOf<BadRequestObjectResult>(result.Result);
+                _customerAccountRepositoryMock.VerifyAll();
+            });
+        }
+
+        [Test]
+        public async Task OpenAccount_EmptyInitialCredit_NotTransactionCreated()
+        {
+            //Arrange
+            int customerId = Math.Abs(Guid.NewGuid().GetHashCode());
+            var target = CreateTarget();
+            _customerAccountRepositoryMock
+                .Setup(c => c.GetCustomer(customerId))
+                .Returns(new DbCustomer
+                {
+                    CustomerId = customerId
+                });
+
+            var newCustomerAccount = new DbCustomerAccount
+            {
+                CustomerId = customerId
+            };
+
+            _customerAccountRepositoryMock
+                .Setup(c => c.CreateCustomerAccount(customerId, 0))
+                .Returns(newCustomerAccount);
+
+            _mapperMock
+                .Setup(c => c.Map<CustomerAccount>(newCustomerAccount))
+                .Returns(new CustomerAccount());
+
+            //Act
+            var result = await target.OpenAccount(new CustomerAccountCreateRequest
+            {
+                InitialCredit = 0,
+                CustomerId = customerId
+            });
+
+            //Assert
+            Assert.Multiple(() =>
+            {
+                Assert.IsInstanceOf<OkObjectResult>(result.Result);
+                _customerAccountRepositoryMock.VerifyAll();
+                _transactionProxyServiceMock
+                    .Verify(c => c.CreateTransaction(It.IsAny<AccountTransaction>()), Times.Never);
+                Assert.IsInstanceOf<OkObjectResult>(result.Result);
             });
         }
 

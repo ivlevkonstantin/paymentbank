@@ -6,13 +6,13 @@ namespace PaymentBank.TransactionService.Repository
 {
     public class TransactionInMemoryRepository : ITransactionRepository
     {
-        private readonly Dictionary<int, List<CustomerTransaction>> _accountTransactions = new Dictionary<int, List<CustomerTransaction>>();
+        private readonly Dictionary<int, List<AccountTransaction>> _accountTransactions = new Dictionary<int, List<AccountTransaction>>();
 
         public TransactionInMemoryRepository()
         {
-            _accountTransactions.Add(1, new List<CustomerTransaction>
+            _accountTransactions.Add(1, new List<AccountTransaction>
             {
-                new CustomerTransaction
+                new AccountTransaction
                 {
                     AccountId = 1,
                     Amount = 7,
@@ -20,7 +20,7 @@ namespace PaymentBank.TransactionService.Repository
                     Id = 1,
                     CustomerId = 1
                 },
-                new CustomerTransaction
+                new AccountTransaction
                 {
                     AccountId = 1,
                     Amount = 3,
@@ -30,9 +30,9 @@ namespace PaymentBank.TransactionService.Repository
                 }
             });
 
-            _accountTransactions.Add(2, new List<CustomerTransaction>
+            _accountTransactions.Add(2, new List<AccountTransaction>
             {
-                new CustomerTransaction
+                new AccountTransaction
                 {
                     AccountId = 2,
                     Amount = 20,
@@ -42,9 +42,9 @@ namespace PaymentBank.TransactionService.Repository
                 }
             });
 
-            _accountTransactions.Add(3, new List<CustomerTransaction>
+            _accountTransactions.Add(3, new List<AccountTransaction>
             {
-                new CustomerTransaction
+                new AccountTransaction
                 {
                     AccountId = 3,
                     Amount = 18,
@@ -52,7 +52,7 @@ namespace PaymentBank.TransactionService.Repository
                     Id = 4,
                     CustomerId = 2
                 },
-                new CustomerTransaction
+                new AccountTransaction
                 {
                     AccountId = 3,
                     Amount = 12,
@@ -63,18 +63,18 @@ namespace PaymentBank.TransactionService.Repository
             });
         }
 
-        public List<CustomerTransaction> GetTransactions()
+        public List<AccountTransaction> GetTransactions()
         {
             return _accountTransactions.SelectMany(c => c.Value).ToList();
         }
 
-        public List<CustomerTransaction> GetTransactionsByAccountId(int accountId)
+        public List<AccountTransaction> GetTransactionsByAccountId(int accountId)
         {
-            _accountTransactions.TryGetValue(accountId, out List<CustomerTransaction> transactions);
+            _accountTransactions.TryGetValue(accountId, out List<AccountTransaction> transactions);
             return transactions;
         }
 
-        public CustomerTransaction CreateTransaction(CustomerTransaction transaction)
+        public AccountTransaction CreateTransaction(AccountTransaction transaction)
         {
             var maxTransactionId = _accountTransactions.SelectMany(c => c.Value).Select(c => c.Id).Max();
             transaction.Id = maxTransactionId;
@@ -84,7 +84,7 @@ namespace PaymentBank.TransactionService.Repository
             }
             else
             {
-                _accountTransactions[transaction.AccountId] = new List<CustomerTransaction> { transaction };
+                _accountTransactions[transaction.AccountId] = new List<AccountTransaction> { transaction };
             }
 
             return transaction;

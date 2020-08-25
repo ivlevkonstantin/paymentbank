@@ -1,6 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -11,28 +14,44 @@ namespace PaymentBank.AccountService.Services
     public class TransactionProxyService : ITransactionProxyService
     {
         private readonly IOptions<AccountOptions> _config;
+        private readonly ILogger<TransactionProxyService> _logger;
 
-        public TransactionProxyService(IOptions<AccountOptions> config)
+        public TransactionProxyService(IOptions<AccountOptions> config, ILogger<TransactionProxyService> logger)
         {
             _config = config;
+            _logger = logger;
         }
 
-        public async Task<List<CustomerTransaction>> GetTransactions(int customerAccountId)
+        public async Task<List<AccountTransaction>> GetTransactions(int customerAccountId)
         {
             using (var httpClient = new HttpClient())
             {
-                var transactionResponse = await httpClient.GetStreamAsync($"{_config.Value.TransactionServiceConnectionString}/transaction/{customerAccountId}");
+                var transactionResponse = await httpClient.GetAsync($"{_config.Value.TransactionServiceConnectionString}/transaction/{customerAccountId}");
 
-                var customerTransactions = await JsonSerializer.DeserializeAsync<IEnumerable<CustomerTransaction>>(transactionResponse, new JsonSerializerOptions
+                if (!transactionResponse.IsSuccessStatusCode)
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    _logger.LogError($"Request to the Transaction service returned {transactionResponse.StatusCode}");
+                    throw new Exception("Can not reach out to transaction service");
+                }
 
-                return customerTransactions.ToList();
+                if (transactionResponse.StatusCode == HttpStatusCode.NoContent)
+                {
+                    return new List<AccountTransaction>();
+                }
+
+                using (var responseStream = await transactionResponse.Content.ReadAsStreamAsync())
+                {
+                    IEnumerable<AccountTransaction> customerTransactions = await JsonSerializer.DeserializeAsync<IEnumerable<AccountTransaction>>(responseStream, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return customerTransactions.ToList();
+                }
             }
         }
 
-        public async Task CreateTransaction(CustomerTransaction transaction)
+        public async Task CreateTransaction(AccountTransaction transaction)
         {
             using (var httpClient = new HttpClient())
             {

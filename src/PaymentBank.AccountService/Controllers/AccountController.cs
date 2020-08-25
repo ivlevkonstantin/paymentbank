@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using PaymentBank.AccountService.Services;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace PaymentBank.AccountService.Controllers
 {
@@ -30,6 +30,13 @@ namespace PaymentBank.AccountService.Controllers
             _logger = logger;
         }
 
+        [Produces("application/json")]
+        [SwaggerResponse(200, "A list of all customer accounts successfully retrived")]
+        [SwaggerOperation(
+            Summary = "Returns a list of all customer accounts",
+            Description = "Returns a list of all customer accounts without transactions.",
+            OperationId = "GetCustomerAccounts"
+        )]
         [HttpGet("account")]
         public ActionResult<IEnumerable<CustomerAccount>> Get()
         {
@@ -38,8 +45,18 @@ namespace PaymentBank.AccountService.Controllers
             return Ok(customerAccounts);
         }
 
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Returns a list of customer accounts for a particular customer",
+            Description = "Returns a list of customer accounts for a particular customer",
+            OperationId = "GetCustomerAccountsByCustomerId"
+        )]
+        [SwaggerResponse(404, "Customer does not exist")]
+        [SwaggerResponse(400, "Invalid customer id")]
+        [SwaggerResponse(200, "A list of customer accounts successfully retrieved")]
         [HttpGet("account/{customerId}")]
-        public async Task<ActionResult<IEnumerable<CustomerAccount>>> GetByCustomerId(int customerId)
+        public async Task<ActionResult<IEnumerable<CustomerAccount>>> GetByCustomerId(
+            [SwaggerParameter("Customer identifier", Required = true)] int customerId)
         {
             _logger.LogInformation($"Get accounts for a {customerId}");
 
@@ -75,8 +92,18 @@ namespace PaymentBank.AccountService.Controllers
             }
         }
 
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Returns an extended customer information",
+            Description = "Returns an extended customer information",
+            OperationId = "GetCustomerInfoByCustomerId"
+        )]
+        [SwaggerResponse(404, "Customer does not exist")]
+        [SwaggerResponse(400, "Invalid customer id")]
+        [SwaggerResponse(200, "Customer info")]
         [HttpGet("customer/{customerId}")]
-        public async Task<ActionResult<DbCustomer>> GetCustomerInfoByCustomerId(int customerId)
+        public async Task<ActionResult<Customer>> GetCustomerInfoByCustomerId(
+            [SwaggerParameter("Customer identifier", Required = true)] int customerId)
         {
             _logger.LogInformation($"Get customer info for a {customerId}");
 
@@ -113,17 +140,35 @@ namespace PaymentBank.AccountService.Controllers
             return Ok(customer);
         }
 
+        [Produces("application/json")]
+        [SwaggerOperation(
+            Summary = "Creates a new account for a customer",
+            Description = @"Creates a new account for a selected customer.
+                            Creates a new transaction for the account in case of positive initial credit",
+            OperationId = "GetCustomerInfoByCustomerId"
+        )]
+        [SwaggerResponse(400, "Invalid customer Id")]
+        [SwaggerResponse(400, "Initial credit could not be negative")]
+        [SwaggerResponse(400, "A customer does not exist")]
+        [SwaggerResponse(200, "Brand new customer account without transactions")]
         [HttpPost("accountcreaterequest")]
-        public async Task<ActionResult<CustomerAccount>> OpenAccount(CustomerAccountCreateRequest customerAccountCreateRequest)
+        public async Task<ActionResult<CustomerAccount>> OpenAccount(
+            [SwaggerParameter("New account request parameters", Required = true)] CustomerAccountCreateRequest customerAccountCreateRequest)
         {
             if (customerAccountCreateRequest.CustomerId <= 0)
             {
-                return BadRequest("Invalid customer Id");
+                return BadRequest(new ProblemDetails
+                {
+                    Detail = "Invalid customer Id"
+                });
             }
 
             if (customerAccountCreateRequest.InitialCredit < 0)
             {
-                return BadRequest("Initial credit could not be negative");
+                return BadRequest(new ProblemDetails
+                {
+                    Detail = "Initial credit could not be negative"
+                });
             }
 
             var customer = _customerAccountRepository.GetCustomer(customerAccountCreateRequest.CustomerId);
@@ -136,7 +181,7 @@ namespace PaymentBank.AccountService.Controllers
 
             if (customerAccountCreateRequest.InitialCredit != 0)
             {
-                var newTransaction = new CustomerTransaction
+                var newTransaction = new AccountTransaction
                 {
                     AccountId = newAccount.CustomerAccountId,
                     Amount = customerAccountCreateRequest.InitialCredit,

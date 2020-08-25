@@ -20,7 +20,10 @@ namespace PaymentBank.TransactionService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(c =>
+            {
+                c.EnableAnnotations();
+            });
             services.AddSingleton<ITransactionRepository, TransactionInMemoryRepository>();
         }
 

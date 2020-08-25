@@ -10,6 +10,6 @@ namespace PaymentBank
 
         public decimal Balance { get; set; }
 
-        public List<CustomerTransaction> Transactions { get; set; }
+        public List<AccountTransaction> Transactions { get; set; }
     }
 }
