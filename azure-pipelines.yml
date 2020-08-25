@@ -60,7 +60,7 @@ stages:
         - task: PublishTestResults@2
           inputs:
             testResultsFormat: 'VSTest'
-            testResultsFiles: '$(System.DefaultWorkingDirectory)/**/.trx'
+            testResultsFiles: '$(System.DefaultWorkingDirectory)/**/*.trx'
             mergeTestResults: true
             failTaskOnFailedTests: true
       
