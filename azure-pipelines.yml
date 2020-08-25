@@ -63,7 +63,7 @@ stages:
 
         - task: reportgenerator@4
           inputs:
-            reports: '**/*.coverage'
+            reports: '$(Build.ArtifactStagingDirectory)\**\*.coverage'
             targetdir: 'coveragereport'
 
         - task: PublishBuildArtifacts@1
