@@ -65,7 +65,12 @@ stages:
         - task: reportgenerator@4
           inputs:
             reports: '$(Build.ArtifactStagingDirectory)\**\*.coverage'
-            targetdir: 'coveragereport'
+            targetdir: '$(Build.ArtifactStagingDirectory)\Test\Results\Coveragereport'
+
+        - task: PublishCodeCoverageResults@1
+          inputs:
+            codeCoverageTool: 'Cobertura'
+            summaryFileLocation: '$(Build.ArtifactStagingDirectory)\Test\Results\Coveragereport\Cobertura.xml'
 
         - task: PublishBuildArtifacts@1
           inputs:
