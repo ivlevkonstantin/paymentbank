@@ -53,6 +53,26 @@ namespace PaymentBank.Tests
         }
 
         [Test]
+        public void Get_Exception_InternalServerError()
+        {
+            //Arrange
+            var target = CreateTarget();
+            _customerAccountRepositoryMock
+                .Setup(c => c.GetCustomerAccounts())
+                .Throws<Exception>();
+
+            //Act
+            var result = target.Get();
+
+            //Assert
+            Assert.Multiple(() =>
+            {
+                Assert.IsInstanceOf<StatusCodeResult>(result.Result);
+                Assert.AreEqual((int)HttpStatusCode.InternalServerError, ((StatusCodeResult)result.Result).StatusCode);
+            });
+        }
+
+        [Test]
         public async Task GetByCustomerId_CustomerIdNegative_BadRequest()
         {
             //Arrange
@@ -178,7 +198,8 @@ namespace PaymentBank.Tests
             //Act
             var result = await target.OpenAccount(new CustomerAccountCreateRequest
             {
-                InitialCredit = -1
+                InitialCredit = -1,
+                CustomerId = 1
             });
 
             //Assert
@@ -250,6 +271,86 @@ namespace PaymentBank.Tests
                 _transactionProxyServiceMock
                     .Verify(c => c.CreateTransaction(It.IsAny<AccountTransaction>()), Times.Never);
                 Assert.IsInstanceOf<OkObjectResult>(result.Result);
+            });
+        }
+
+        [Test]
+        public async Task OpenAccount_PositiveInitialCredit_TransactionCreated()
+        {
+            //Arrange
+            const decimal balance = 123;
+            int customerId = Math.Abs(Guid.NewGuid().GetHashCode());
+            int customerAccountId = Math.Abs(Guid.NewGuid().GetHashCode());
+            var target = CreateTarget();
+            _customerAccountRepositoryMock
+                .Setup(c => c.GetCustomer(customerId))
+                .Returns(new DbCustomer
+                {
+                    CustomerId = customerId
+                });
+
+            var newCustomerAccount = new DbCustomerAccount
+            {
+                CustomerId = customerId,
+                CustomerAccountId = customerAccountId
+            };
+
+            _customerAccountRepositoryMock
+                .Setup(c => c.CreateCustomerAccount(customerId, balance))
+                .Returns(newCustomerAccount);
+
+            _mapperMock
+                .Setup(c => c.Map<CustomerAccount>(newCustomerAccount))
+                .Returns(new CustomerAccount());
+
+            AccountTransaction createdTransaction = null;
+            _transactionProxyServiceMock
+                .Setup(c => c.CreateTransaction(It.IsAny<AccountTransaction>()))
+                .Returns(Task.CompletedTask)
+                .Callback((AccountTransaction tran) => { createdTransaction = tran; });
+
+            //Act
+            var result = await target.OpenAccount(new CustomerAccountCreateRequest
+            {
+                InitialCredit = balance,
+                CustomerId = customerId
+            });
+
+            //Assert
+            Assert.Multiple(() =>
+            {
+                Assert.IsInstanceOf<OkObjectResult>(result.Result);
+                _customerAccountRepositoryMock.VerifyAll();
+                _transactionProxyServiceMock.VerifyAll();
+                Assert.IsInstanceOf<OkObjectResult>(result.Result);
+                Assert.AreEqual(customerId, createdTransaction.CustomerId);
+                Assert.AreEqual(customerAccountId, createdTransaction.AccountId);
+                Assert.AreEqual(balance, createdTransaction.Amount);
+            });
+        }
+
+        [Test]
+        public async Task OpenAccount_Exception_InternalServerError()
+        {
+            //Arrange
+            int customerId = Math.Abs(Guid.NewGuid().GetHashCode());
+            var target = CreateTarget();
+            _customerAccountRepositoryMock
+                .Setup(c => c.GetCustomer(customerId))
+                .Throws<Exception>();
+
+            //Act
+            var result = await target.OpenAccount(new CustomerAccountCreateRequest
+            {
+                InitialCredit = 0,
+                CustomerId = customerId
+            });
+
+            //Assert
+            Assert.Multiple(() =>
+            {
+                Assert.IsInstanceOf<StatusCodeResult>(result.Result);
+                Assert.AreEqual((int)HttpStatusCode.InternalServerError, ((StatusCodeResult)result.Result).StatusCode);
             });
         }
 
