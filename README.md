@@ -51,6 +51,14 @@ Disclamer: full bank layout infrastructure is not available yet, that's why in m
 OpenAPI specification is available at [swagger.json](https://paymentbank-transactionservice.azurewebsites.net/swagger/v1/swagger.json) file.
 <img src="doc/images/TransactionServiceSwagger.JPG" width="90%"></img>
 
+## Architecture
+
+Sequence diagramm could be found below:
+<img src="doc/images/Sequence.JPG" width="90%"></img>
+
+Total microservices landscape:
+<img src="doc/images/Microservices.JPG" width="90%"></img>
+
 ## Roadmap
 
 ### Functional changes
