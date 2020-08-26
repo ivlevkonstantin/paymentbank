@@ -80,5 +80,9 @@ Total microservices landscape:
 * split Account and Transaction services to different repositories
 * use HttpClientFactory instead of creating HttpClient
 
+### Further architecture considerations
+* enable consistency and transaction support
+* leverage API management
+
 ## Run locally
 build&run.cmd file in the root of the repository builds the whole solution and runs both Account and Transaction services on ports 5000 and 5001 correspondingly (ports could be changed in launchsettings.json files).
